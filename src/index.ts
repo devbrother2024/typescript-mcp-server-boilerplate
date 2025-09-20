@@ -7,7 +7,8 @@ const server = new McpServer({
     name: 'typescript-mcp-server',
     version: '1.0.0',
     capabilities: {
-        tools: {}
+        tools: {},
+        resources: {}
     }
 })
 
