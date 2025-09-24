@@ -1,28 +1,61 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import { z } from 'zod'
+import {
+    ListToolsRequestSchema,
+    CallToolRequestSchema
+} from '@modelcontextprotocol/sdk/types.js'
 
 // 서버 인스턴스 생성
-const server = new McpServer({
-    name: 'typescript-mcp-server',
-    version: '1.0.0',
-    capabilities: {
-        tools: {}
+const server = new Server(
+    {
+        name: 'typescript-mcp-server',
+        version: '1.0.0'
+    },
+    {
+        capabilities: {
+            tools: {}
+        }
+    }
+)
+
+// 도구 목록 요청 핸들러
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+        tools: [
+            {
+                name: 'greeting',
+                description: '지정된 언어로 인사를 생성합니다',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: {
+                            type: 'string',
+                            description: '인사할 사람의 이름'
+                        },
+                        language: {
+                            type: 'string',
+                            enum: ['ko', 'en'],
+                            default: 'ko',
+                            description: '인사 언어 (기본값: ko)'
+                        }
+                    },
+                    required: ['name']
+                }
+            }
+        ]
     }
 })
 
-// 예시 도구: 인사하기
-server.tool(
-    'greeting',
-    {
-        name: z.string().describe('인사할 사람의 이름'),
-        language: z
-            .enum(['ko', 'en'])
-            .optional()
-            .default('ko')
-            .describe('인사 언어 (기본값: ko)')
-    },
-    async ({ name, language }) => {
+// 도구 호출 요청 핸들러
+server.setRequestHandler(CallToolRequestSchema, async request => {
+    const { name: toolName, arguments: args } = request.params
+
+    if (toolName === 'greeting') {
+        const { name, language = 'ko' } = args as {
+            name: string
+            language?: 'ko' | 'en'
+        }
+
         const greeting =
             language === 'ko'
                 ? `안녕하세요, ${name}님! 😊`
@@ -37,7 +70,9 @@ server.tool(
             ]
         }
     }
-)
+
+    throw new Error(`알 수 없는 도구: ${toolName}`)
+})
 
 // 서버 시작
 async function main() {
