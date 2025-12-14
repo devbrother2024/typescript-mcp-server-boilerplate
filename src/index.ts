@@ -192,6 +192,134 @@ server.registerTool(
     }
 )
 
+server.registerTool(
+    'geocode',
+    {
+        description:
+            '도시 이름이나 주소를 입력받아 Nominatim OpenStreetMap API를 사용하여 위도와 경도 좌표를 반환합니다.',
+        inputSchema: z.object({
+            query: z
+                .string()
+                .describe(
+                    '검색할 도시 이름이나 주소 (예: "서울", "Seoul, South Korea", "New York City")'
+                ),
+            limit: z
+                .number()
+                .int()
+                .min(1)
+                .max(10)
+                .optional()
+                .default(1)
+                .describe('반환할 최대 결과 수 (기본값: 1)')
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('위도와 경도 좌표 정보')
+                    })
+                )
+                .describe('위도와 경도 좌표 정보')
+        })
+    },
+    async ({ query, limit }) => {
+        try {
+            const baseUrl = 'https://nominatim.openstreetmap.org/search'
+            const params = new URLSearchParams({
+                q: query,
+                format: 'jsonv2',
+                limit: limit.toString(),
+                addressdetails: '1'
+            })
+
+            const url = `${baseUrl}?${params.toString()}`
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'MCP-Server/1.0.0'
+                }
+            })
+
+            if (!response.ok) {
+                throw new Error(
+                    `Nominatim API 요청 실패: ${response.status} ${response.statusText}`
+                )
+            }
+
+            const data = await response.json()
+
+            if (!Array.isArray(data) || data.length === 0) {
+                return {
+                    content: [
+                        {
+                            type: 'text' as const,
+                            text: `"${query}"에 대한 검색 결과를 찾을 수 없습니다.`
+                        }
+                    ],
+                    structuredContent: {
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: `"${query}"에 대한 검색 결과를 찾을 수 없습니다.`
+                            }
+                        ]
+                    }
+                }
+            }
+
+            const results = data.map((result: any) => {
+                const lat = parseFloat(result.lat)
+                const lon = parseFloat(result.lon)
+                const displayName = result.display_name || query
+
+                return {
+                    query: query,
+                    displayName: displayName,
+                    latitude: lat,
+                    longitude: lon,
+                    placeId: result.place_id,
+                    address: result.address || {}
+                }
+            })
+
+            let resultText = `"${query}" 검색 결과:\n\n`
+            results.forEach((result: any, index: number) => {
+                resultText += `${index + 1}. ${result.displayName}\n`
+                resultText += `   위도: ${result.latitude}\n`
+                resultText += `   경도: ${result.longitude}\n`
+                if (index < results.length - 1) {
+                    resultText += '\n'
+                }
+            })
+
+            return {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: resultText
+                    }
+                ],
+                structuredContent: {
+                    content: [
+                        {
+                            type: 'text' as const,
+                            text: resultText
+                        }
+                    ]
+                }
+            }
+        } catch (error) {
+            throw new Error(
+                `Geocoding 오류: ${
+                    error instanceof Error
+                        ? error.message
+                        : '알 수 없는 오류가 발생했습니다'
+                }`
+            )
+        }
+    }
+)
+
 server
     .connect(new StdioServerTransport())
     .catch(console.error)
