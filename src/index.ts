@@ -500,6 +500,62 @@ server.registerTool(
     }
 )
 
+// 서버 정보 리소스
+server.registerResource(
+    'server-info',
+    'mcp://server-info',
+    {
+        description: 'MCP 서버의 현재 상태 및 시스템 정보',
+        mimeType: 'application/json'
+    },
+    async () => {
+        const serverInfo = {
+            server: 'my-mcp-server',
+            version: '1.0.0',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            nodeVersion: process.version,
+            platform: process.platform,
+            tools: [
+                {
+                    name: 'greet',
+                    description: '이름과 언어를 입력하면 인사말을 반환합니다.'
+                },
+                {
+                    name: 'calculator',
+                    description:
+                        '두 개의 숫자와 연산자를 입력받아 사칙연산을 수행하고 결과를 반환합니다.'
+                },
+                {
+                    name: 'get-time',
+                    description:
+                        'timezone을 입력받아 해당 timezone의 현재 시간을 반환합니다.'
+                },
+                {
+                    name: 'geocode',
+                    description:
+                        '도시 이름이나 주소를 입력받아 위도와 경도 좌표를 반환합니다.'
+                },
+                {
+                    name: 'get-weather',
+                    description:
+                        '위도와 경도 좌표를 입력받아 현재 날씨와 예보 정보를 제공합니다.'
+                }
+            ]
+        }
+
+        return {
+            contents: [
+                {
+                    uri: 'mcp://server-info',
+                    mimeType: 'application/json',
+                    text: JSON.stringify(serverInfo, null, 2)
+                }
+            ]
+        }
+    }
+)
+
 server
     .connect(new StdioServerTransport())
     .catch(console.error)
