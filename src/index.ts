@@ -4,49 +4,61 @@ import { z } from 'zod'
 
 // 서버 인스턴스 생성
 const server = new McpServer({
-    name: 'typescript-mcp-server',
-    version: '1.0.0',
-    capabilities: {
-        tools: {}
-    }
+    name: 'my-mcp-server',
+    version: '1.0.0'
 })
 
-// 예시 도구: 인사하기
-server.tool(
-    'greeting',
+server.registerTool(
+    'greet',
     {
-        name: z.string().describe('인사할 사람의 이름'),
-        language: z
-            .enum(['ko', 'en'])
-            .optional()
-            .default('ko')
-            .describe('인사 언어 (기본값: ko)')
+        description: '이름과 언어를 입력하면 인사말을 반환합니다.',
+        inputSchema: z.object({
+            name: z.string().describe('인사할 사람의 이름'),
+            language: z
+                .enum(['ko', 'en'])
+                .optional()
+                .default('en')
+                .describe('인사 언어 (기본값: en)')
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('인사말')
+                    })
+                )
+                .describe('인사말')
+        })
     },
     async ({ name, language }) => {
         const greeting =
             language === 'ko'
-                ? `안녕하세요, ${name}님! 😊`
-                : `Hello, ${name}! 👋`
+                ? `안녕하세요, ${name}님!`
+                : `Hey there, ${name}! 👋 Nice to meet you!`
 
         return {
             content: [
                 {
-                    type: 'text',
+                    type: 'text' as const,
                     text: greeting
                 }
-            ]
+            ],
+            structuredContent: {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: greeting
+                    }
+                ]
+            }
         }
     }
 )
 
-// 서버 시작
-async function main() {
-    const transport = new StdioServerTransport()
-    await server.connect(transport)
-    console.error('TypeScript MCP 서버가 시작되었습니다!')
-}
-
-main().catch(error => {
-    console.error('서버 시작 중 오류 발생:', error)
-    process.exit(1)
-})
+server
+    .connect(new StdioServerTransport())
+    .catch(console.error)
+    .then(() => {
+        console.log('MCP server started')
+    })
