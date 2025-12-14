@@ -4,101 +4,133 @@ import { z } from 'zod'
 
 // 서버 인스턴스 생성
 const server = new McpServer({
-    name: 'typescript-mcp-server',
-    version: '1.0.0',
-    capabilities: {
-        tools: {}
-    }
+    name: 'my-mcp-server',
+    version: '1.0.0'
 })
 
-// 예시 도구: 인사하기
-server.tool(
-    'greeting',
+server.registerTool(
+    'greet',
     {
-        name: z.string().describe('인사할 사람의 이름'),
-        language: z
-            .enum(['ko', 'en'])
-            .optional()
-            .default('ko')
-            .describe('인사 언어 (기본값: ko)')
+        description: '이름과 언어를 입력하면 인사말을 반환합니다.',
+        inputSchema: z.object({
+            name: z.string().describe('인사할 사람의 이름'),
+            language: z
+                .enum(['ko', 'en'])
+                .optional()
+                .default('en')
+                .describe('인사 언어 (기본값: en)')
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('인사말')
+                    })
+                )
+                .describe('인사말')
+        })
     },
     async ({ name, language }) => {
         const greeting =
             language === 'ko'
-                ? `안녕하세요, ${name}님! 😊`
-                : `Hello, ${name}! 👋`
+                ? `안녕하세요, ${name}님!`
+                : `Hey there, ${name}! 👋 Nice to meet you!`
 
         return {
             content: [
                 {
-                    type: 'text',
+                    type: 'text' as const,
                     text: greeting
                 }
-            ]
+            ],
+            structuredContent: {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: greeting
+                    }
+                ]
+            }
         }
     }
 )
 
-// 예시 도구: 계산기
-server.tool(
+server.registerTool(
     'calculator',
     {
-        operation: z
-            .enum(['add', 'subtract', 'multiply', 'divide'])
-            .describe('수행할 연산 (add, subtract, multiply, divide)'),
-        a: z.number().describe('첫 번째 숫자'),
-        b: z.number().describe('두 번째 숫자')
+        description:
+            '두 개의 숫자와 연산자를 입력받아 사칙연산을 수행하고 결과를 반환합니다.',
+        inputSchema: z.object({
+            a: z.number().describe('첫 번째 숫자'),
+            b: z.number().describe('두 번째 숫자'),
+            operator: z
+                .enum(['+', '-', '*', '/'])
+                .describe('연산자 (+, -, *, /)')
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('계산 결과')
+                    })
+                )
+                .describe('계산 결과')
+        })
     },
-    async ({ operation, a, b }) => {
-        // 연산 수행
+    async ({ a, b, operator }) => {
         let result: number
-        switch (operation) {
-            case 'add':
+        let operationSymbol: string
+
+        switch (operator) {
+            case '+':
                 result = a + b
+                operationSymbol = '+'
                 break
-            case 'subtract':
+            case '-':
                 result = a - b
+                operationSymbol = '-'
                 break
-            case 'multiply':
+            case '*':
                 result = a * b
+                operationSymbol = '×'
                 break
-            case 'divide':
-                if (b === 0) throw new Error('0으로 나눌 수 없습니다')
+            case '/':
+                if (b === 0) {
+                    throw new Error('0으로 나눌 수 없습니다')
+                }
                 result = a / b
+                operationSymbol = '÷'
                 break
             default:
-                throw new Error('지원하지 않는 연산입니다')
+                throw new Error('지원하지 않는 연산자입니다')
         }
 
-        const operationSymbols = {
-            add: '+',
-            subtract: '-',
-            multiply: '×',
-            divide: '÷'
-        } as const
-
-        const operationSymbol =
-            operationSymbols[operation as keyof typeof operationSymbols]
+        const resultText = `${a} ${operationSymbol} ${b} = ${result}`
 
         return {
             content: [
                 {
-                    type: 'text',
-                    text: `${a} ${operationSymbol} ${b} = ${result}`
+                    type: 'text' as const,
+                    text: resultText
                 }
-            ]
+            ],
+            structuredContent: {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: resultText
+                    }
+                ]
+            }
         }
     }
 )
 
-// 서버 시작
-async function main() {
-    const transport = new StdioServerTransport()
-    await server.connect(transport)
-    console.error('TypeScript MCP 서버가 시작되었습니다!')
-}
-
-main().catch(error => {
-    console.error('서버 시작 중 오류 발생:', error)
-    process.exit(1)
-})
+server
+    .connect(new StdioServerTransport())
+    .catch(console.error)
+    .then(() => {
+        console.log('MCP server started')
+    })
