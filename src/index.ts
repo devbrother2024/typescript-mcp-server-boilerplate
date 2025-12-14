@@ -128,6 +128,70 @@ server.registerTool(
     }
 )
 
+server.registerTool(
+    'get-time',
+    {
+        description:
+            'timezone을 입력받아 해당 timezone의 현재 시간을 반환합니다.',
+        inputSchema: z.object({
+            timezone: z
+                .string()
+                .describe(
+                    'IANA timezone 식별자 (예: Asia/Seoul, America/New_York, Europe/London, UTC)'
+                )
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('현재 시간')
+                    })
+                )
+                .describe('현재 시간')
+        })
+    },
+    async ({ timezone }) => {
+        try {
+            const now = new Date()
+            const formatter = new Intl.DateTimeFormat('ko-KR', {
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            })
+
+            const formattedTime = formatter.format(now)
+            const resultText = `${timezone}의 현재 시간: ${formattedTime}`
+
+            return {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: resultText
+                    }
+                ],
+                structuredContent: {
+                    content: [
+                        {
+                            type: 'text' as const,
+                            text: resultText
+                        }
+                    ]
+                }
+            }
+        } catch (error) {
+            throw new Error(
+                `유효하지 않은 timezone입니다: ${timezone}. IANA timezone 식별자를 사용해주세요 (예: Asia/Seoul, America/New_York)`
+            )
+        }
+    }
+)
+
 server
     .connect(new StdioServerTransport())
     .catch(console.error)
