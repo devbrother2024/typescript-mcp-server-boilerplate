@@ -56,6 +56,78 @@ server.registerTool(
     }
 )
 
+server.registerTool(
+    'calculator',
+    {
+        description:
+            '두 개의 숫자와 연산자를 입력받아 사칙연산을 수행하고 결과를 반환합니다.',
+        inputSchema: z.object({
+            a: z.number().describe('첫 번째 숫자'),
+            b: z.number().describe('두 번째 숫자'),
+            operator: z
+                .enum(['+', '-', '*', '/'])
+                .describe('연산자 (+, -, *, /)')
+        }),
+        outputSchema: z.object({
+            content: z
+                .array(
+                    z.object({
+                        type: z.literal('text'),
+                        text: z.string().describe('계산 결과')
+                    })
+                )
+                .describe('계산 결과')
+        })
+    },
+    async ({ a, b, operator }) => {
+        let result: number
+        let operationSymbol: string
+
+        switch (operator) {
+            case '+':
+                result = a + b
+                operationSymbol = '+'
+                break
+            case '-':
+                result = a - b
+                operationSymbol = '-'
+                break
+            case '*':
+                result = a * b
+                operationSymbol = '×'
+                break
+            case '/':
+                if (b === 0) {
+                    throw new Error('0으로 나눌 수 없습니다')
+                }
+                result = a / b
+                operationSymbol = '÷'
+                break
+            default:
+                throw new Error('지원하지 않는 연산자입니다')
+        }
+
+        const resultText = `${a} ${operationSymbol} ${b} = ${result}`
+
+        return {
+            content: [
+                {
+                    type: 'text' as const,
+                    text: resultText
+                }
+            ],
+            structuredContent: {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: resultText
+                    }
+                ]
+            }
+        }
+    }
+)
+
 server
     .connect(new StdioServerTransport())
     .catch(console.error)
