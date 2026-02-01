@@ -227,13 +227,13 @@ server.resource(
 
 ## 📦 주요 의존성
 
--   **@modelcontextprotocol/sdk**: MCP 프로토콜 구현을 위한 공식 SDK
--   **zod**: TypeScript 우선 스키마 검증 라이브러리
--   **typescript**: TypeScript 컴파일러
+- **@modelcontextprotocol/sdk**: MCP 프로토콜 구현을 위한 공식 SDK
+- **zod**: TypeScript 우선 스키마 검증 라이브러리
+- **typescript**: TypeScript 컴파일러
 
 ## 🔧 스크립트
 
--   `npm run build`: TypeScript를 JavaScript로 컴파일하고 실행 권한 설정
+- `npm run build`: TypeScript를 JavaScript로 컴파일하고 실행 권한 설정
 
 ## 📋 사용 예시
 
@@ -344,16 +344,16 @@ main().catch(console.error)
 
 Cursor MCP에서 다음과 같이 테스트해볼 수 있습니다:
 
--   "5 더하기 3은 얼마야?" (계산기 도구 테스트)
--   "안녕하세요 라고 인사해줘" (인사 도구 테스트)
--   서버 정보 리소스 조회
+- "5 더하기 3은 얼마야?" (계산기 도구 테스트)
+- "안녕하세요 라고 인사해줘" (인사 도구 테스트)
+- 서버 정보 리소스 조회
 
 ## 🔗 참고 자료
 
--   [Model Context Protocol 공식 문서](https://modelcontextprotocol.io/)
--   [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
--   [Node.js MCP 서버 개발 가이드](https://modelcontextprotocol.io/docs/develop/build-server#node)
--   [Zod 문서](https://zod.dev/)
+- [Model Context Protocol 공식 문서](https://modelcontextprotocol.io/)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Node.js MCP 서버 개발 가이드](https://modelcontextprotocol.io/docs/develop/build-server#node)
+- [Zod 문서](https://zod.dev/)
 
 ## 📄 라이선스
 
